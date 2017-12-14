@@ -21,6 +21,8 @@
 @property (nonatomic, strong) NSArray *childViewControllers;
 /// collectionView
 @property (nonatomic, strong) UICollectionView *collectionView;
+/// collectionViewFlowlayout
+@property (nonatomic, strong) UICollectionViewFlowLayout *flowLayout;
 /// 记录刚开始时的偏移量
 @property (nonatomic, assign) NSInteger startOffsetX;
 /// 标记按钮是否点击
@@ -40,7 +42,7 @@
             @throw [NSException exceptionWithName:@"SGPagingView" reason:@"SGPageContentView 子控制器必须设置" userInfo:nil];
         }
         self.childViewControllers = childVCs;
-                
+        
         [self initialization];
         [self setupSubviews];
     }
@@ -70,20 +72,18 @@
 
 - (UICollectionView *)collectionView {
     if (!_collectionView) {
-        UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
-        flowLayout.itemSize = self.bounds.size;
-        flowLayout.minimumLineSpacing = 0;
-        flowLayout.minimumInteritemSpacing = 0;
-        flowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
         CGFloat collectionViewX = 0;
         CGFloat collectionViewY = 0;
         CGFloat collectionViewW = self.SG_width;
         CGFloat collectionViewH = self.SG_height;
-        _collectionView = [[UICollectionView alloc] initWithFrame:CGRectMake(collectionViewX, collectionViewY, collectionViewW, collectionViewH) collectionViewLayout:flowLayout];
+        _collectionView = [[UICollectionView alloc] initWithFrame:CGRectMake(collectionViewX, collectionViewY, collectionViewW, collectionViewH) collectionViewLayout:self.flowLayout];
         _collectionView.showsVerticalScrollIndicator = NO;
         _collectionView.showsHorizontalScrollIndicator = NO;
         _collectionView.pagingEnabled = YES;
         _collectionView.bounces = NO;
+        if (NSFoundationVersionNumber > NSFoundationVersionNumber_iOS_9_x_Max) {
+            _collectionView.prefetchingEnabled = false;
+        }
         _collectionView.backgroundColor = [UIColor whiteColor];
         _collectionView.delegate = self;
         _collectionView.dataSource = self;
@@ -92,6 +92,17 @@
     return _collectionView;
 }
 
+-(UICollectionViewFlowLayout *)flowLayout {
+    if (!_flowLayout) {
+        UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
+        flowLayout.itemSize = self.bounds.size;
+        flowLayout.minimumLineSpacing = 0;
+        flowLayout.minimumInteritemSpacing = 0;
+        flowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+        _flowLayout = flowLayout;
+    }
+    return _flowLayout;
+}
 #pragma mark - - - UICollectionViewDataSource
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return self.childViewControllers.count;
@@ -177,6 +188,20 @@
     }
 }
 
+- (void)setPageCententViewCurrentIndex:(NSInteger)currentIndex animate:(BOOL)animate {
+    self.isClickBtn = YES;
+    CGFloat offsetX = currentIndex * self.collectionView.SG_width;
+    [self.collectionView setContentOffset:CGPointMake(offsetX, 0) animated:YES];
+}
+
+- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
+    CGFloat offsetX = scrollView.contentOffset.x;
+    // 处理偏移
+    if (self.delegatePageContentView && [self.delegatePageContentView respondsToSelector:@selector(pageContentView:offsetX:)]) {
+        [self.delegatePageContentView pageContentView:self offsetX:offsetX];
+    }
+}
+
 #pragma mark - - - set
 - (void)setIsScrollEnabled:(BOOL)isScrollEnabled {
     _isScrollEnabled = isScrollEnabled;
@@ -189,4 +214,3 @@
 
 
 @end
-

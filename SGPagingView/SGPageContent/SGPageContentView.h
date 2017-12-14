@@ -60,4 +60,6 @@
 /** 给外界提供的方法，获取 SGPageTitleView 选中按钮的下标 */
 - (void)setPageCententViewCurrentIndex:(NSInteger)currentIndex;
 
+/** 给外界提供的方法，获取 SGPageTitleView 选中按钮的下标 选择是否通过动画移动*/
+- (void)setPageCententViewCurrentIndex:(NSInteger)currentIndex animate:(BOOL)animate;
 @end
